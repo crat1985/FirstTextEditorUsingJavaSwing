@@ -1,6 +1,7 @@
 package fr.texteditor.com;
 
 import java.awt.BorderLayout;
+import java.awt.Color;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
 import java.awt.event.WindowAdapter;
@@ -14,6 +15,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.swing.AbstractAction;
+import javax.swing.JButton;
 import javax.swing.JFileChooser;
 import javax.swing.JFrame;
 import javax.swing.JMenu;
@@ -24,8 +26,10 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.KeyStroke;
+import javax.swing.UIDefaults;
 import javax.swing.UIManager;
 import javax.swing.UnsupportedLookAndFeelException;
+import javax.swing.plaf.ColorUIResource;
 import javax.swing.plaf.nimbus.NimbusLookAndFeel;
 
 import org.apache.commons.lang3.StringUtils;
@@ -63,6 +67,12 @@ public class Main extends JFrame{
 				System.out.println("Au revoir");
 			}
 		});
+		
+		
+		UIDefaults uiDefaults = UIManager.getDefaults();
+		uiDefaults.put("activeCaption", new ColorUIResource(Color.gray));
+		uiDefaults.put("activeCaptionText", new ColorUIResource(Color.white));
+		JFrame.setDefaultLookAndFeelDecorated(true);
 	}
 	
 	private AbstractAction newEmptyFileAction = new AbstractAction() {
