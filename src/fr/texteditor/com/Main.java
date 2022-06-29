@@ -3,9 +3,14 @@ package fr.texteditor.com;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
+import java.io.FileWriter;
 import java.io.IOException;
 
 import javax.swing.AbstractAction;
@@ -14,6 +19,7 @@ import javax.swing.JFrame;
 import javax.swing.JMenu;
 import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
@@ -29,17 +35,34 @@ public class Main extends JFrame{
 	private static final long serialVersionUID = -3821142735327780006L;
 	JScrollPane scPane;
 	JTextArea textArea;
+	File file;
 	public Main() {
 		super("Editeur de texte");
 		this.setLocationRelativeTo(null);
 		this.setSize(720,480);
-		this.setDefaultCloseOperation(DISPOSE_ON_CLOSE);
+		this.setDefaultCloseOperation(DO_NOTHING_ON_CLOSE);
 		this.setJMenuBar(createJMenuBar());
 		
 		JPanel contentPane = (JPanel) this.getContentPane();
 		textArea = new JTextArea();
+		textArea.setTabSize(2);
 		scPane = new JScrollPane(textArea);
 		contentPane.add(scPane,BorderLayout.CENTER);
+		
+		this.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosing(WindowEvent e) {
+				int response = JOptionPane.showConfirmDialog(Main.this, "Voulez-vous vraiment quitter l'application ?","Confirmer ?",JOptionPane.YES_NO_OPTION);
+				if(response==0) {
+					dispose();
+				}
+			}
+			
+			@Override
+			public void windowClosed(WindowEvent e) {
+				System.out.println("Au revoir");
+			}
+		});
 	}
 	
 	private AbstractAction newEmptyFileAction = new AbstractAction() {
@@ -52,6 +75,99 @@ public class Main extends JFrame{
 		@Override
 		public void actionPerformed(ActionEvent e) {
 			textArea.setText("");
+			file = null;
+			JOptionPane.showMessageDialog(Main.this, "Nouveau document vide créé avec succès !");
+		}
+	};
+	
+	private AbstractAction newJavaFileAction = new AbstractAction() {
+		{
+			putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_J, KeyEvent.CTRL_DOWN_MASK));
+			putValue(MNEMONIC_KEY, KeyEvent.VK_J);
+			putValue(NAME, "Java File");
+			putValue(SHORT_DESCRIPTION, "Créer un nouveau fichier Java basique");
+		}
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			textArea.setText("public class Main{\n\tpublic static void main(String[] args){\n\t\tSystem.out.println(\"Hello World\")\n\t}\n}");
+			file = null;
+			JOptionPane.showMessageDialog(Main.this, "Nouveau document vide créé avec succès !");
+		}
+	};
+	
+	private AbstractAction quitAction = new AbstractAction() {
+		{
+			putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_Q, KeyEvent.CTRL_DOWN_MASK));
+			putValue(MNEMONIC_KEY, KeyEvent.VK_Q);
+			putValue(NAME, "Quit");
+			putValue(SHORT_DESCRIPTION, "Quitter l'application");
+		}
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			int response = JOptionPane.showConfirmDialog(Main.this, "Voulez-vous vraiment quitter l'application ?","Confirmer ?",JOptionPane.YES_NO_OPTION);
+			if(response==0) {
+				dispose();
+			}
+		}
+	};
+	
+	private AbstractAction saveAction = new AbstractAction() {
+		{
+			putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S, KeyEvent.CTRL_DOWN_MASK));
+			putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+			putValue(NAME, "Save");
+			putValue(SHORT_DESCRIPTION, "Save file you're editing");
+		}
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			if(file==null) {
+				saveFunction();
+				return;
+			}
+			try {
+				BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(file));
+				bufferedWriter.write(textArea.getText());
+				bufferedWriter.close();
+			} catch (IOException e1) {
+				JOptionPane.showMessageDialog(Main.this, "Erreur lors de l'enregistrement de "+file.getAbsolutePath());
+				return;
+			}
+			JOptionPane.showMessageDialog(Main.this, "Enregistrement réussi de "+file.getAbsolutePath()+" !");
+		}
+	};
+	
+	private void saveFunction() {
+		JFileChooser fileChooser;
+		File fileChoosed = file;
+		fileChooser = new JFileChooser();
+		fileChooser.showSaveDialog(Main.this);
+		fileChoosed = fileChooser.getSelectedFile();
+		if(fileChoosed==null) {
+			JOptionPane.showMessageDialog(Main.this, "Sauvegarde annulée...");
+			return;
+		}
+		file = fileChoosed;
+		try {
+			BufferedWriter bufferedWriter = new BufferedWriter(new FileWriter(fileChoosed));
+			bufferedWriter.write(textArea.getText());
+			bufferedWriter.close();
+		} catch (IOException e1) {
+			JOptionPane.showMessageDialog(Main.this, "Erreur lors de l'enregistrement de "+fileChoosed.getAbsolutePath());
+			return;
+		}
+		JOptionPane.showMessageDialog(Main.this, "Enregistrement réussi de "+fileChoosed.getAbsolutePath()+" !");
+	}
+	
+	private AbstractAction saveAsAction = new AbstractAction() {
+		{
+			putValue(ACCELERATOR_KEY, KeyStroke.getKeyStroke(KeyEvent.VK_S,KeyEvent.CTRL_DOWN_MASK+KeyEvent.SHIFT_DOWN_MASK));
+			putValue(MNEMONIC_KEY, KeyEvent.VK_S);
+			putValue(NAME, "Save as");
+			putValue(SHORT_DESCRIPTION, "Save the file you're editing to a specific location");
+		}
+		@Override
+		public void actionPerformed(ActionEvent e) {
+			saveFunction();
 		}
 	};
 	
@@ -69,14 +185,16 @@ public class Main extends JFrame{
 			if(fileChooser.getSelectedFile()==null) {
 				return;
 			}
+			file = fileChooser.getSelectedFile();
 			try {
-				BufferedReader bufferedReader = new BufferedReader(new FileReader(fileChooser.getSelectedFile()));
+				BufferedReader bufferedReader = new BufferedReader(new FileReader(file));
 				String tempContent = "";
 				String content = "";
 				try {
 					while((tempContent = bufferedReader.readLine())!=null) {
 						content+=tempContent+"\n";
 					}
+					bufferedReader.close();
 					content = StringUtils.removeEnd(content, "\n");
 					textArea.setText(content);
 				} catch (IOException e2) {
@@ -95,7 +213,11 @@ public class Main extends JFrame{
 		JMenu newMenu = new JMenu("New...");
 		fileMenu.add(newMenu);
 		newMenu.add(newEmptyFileAction);
+		newMenu.add(newJavaFileAction);
 		fileMenu.add(openFileAction);
+		fileMenu.add(saveAction);
+		fileMenu.add(saveAsAction);
+		fileMenu.add(quitAction);
 		return menuBar;
 	}
 
